@@ -42,7 +42,7 @@ test('assignGroupNumber splits ranks 1-20 into G1 and 21+ into G2', () => {
   assert.equal(assignGroupNumber(40), 2);
 });
 
-test('computeDocimoStats computes exact mean, median, variance, stdDev, range, successRate, and excludes absents', () => {
+test('computeDocimoStats computes exact mean, median, variance, stdDev, range, successRate, and excludes absents + zeros', () => {
   // Scores: [6, 8, 10, 14, 17] -> sum = 55, N = 5, mean = 11
   // Deviations: [-5, -3, -1, 3, 6] -> sq = [25, 9, 1, 9, 36] = 80
   // Variance = 80/5 = 16, stdDev = 4
@@ -54,15 +54,18 @@ test('computeDocimoStats computes exact mean, median, variance, stdDev, range, s
     makeStudent(3, 10),
     makeStudent(4, 14),
     makeStudent(5, 17),
-    makeStudent(6, 15, true), // absent: must be excluded from graded stats
-    makeStudent(7, null, false), // missing score: excluded from graded stats
+    makeStudent(6, 15, true), // absent Col H: excluded
+    makeStudent(7, null, false), // missing score: excluded
+    makeStudent(8, 0, false), // note 0: treated as absence & excluded!
   ];
 
   const stats = computeDocimoStats('2APIC-1', '2APIC-1', '2APIC-1', students, 'G');
 
-  assert.equal(stats.effectif, 7);
+  assert.equal(stats.effectif, 8);
   assert.equal(stats.notesCount, 5);
-  assert.equal(stats.absentCount, 2);
+  assert.equal(stats.absentCount, 3);
+  assert.equal(stats.zeroCount, 1);
+  assert.equal(stats.absentStudents.some((a) => a.reason === 'Note 0' && a.rankInClass === 8), true);
   assert.equal(stats.mean, 11);
   assert.equal(stats.min, 6);
   assert.equal(stats.max, 17);
@@ -73,7 +76,7 @@ test('computeDocimoStats computes exact mean, median, variance, stdDev, range, s
   assert.equal(stats.successCount, 3);
   assert.equal(stats.successRate, 60);
 
-  // Need groups: >= 11 -> [17, 14], 8..10.99 -> [10, 8], < 8 -> [6]
+  // Need groups: >= 11 -> [17, 14], 8..10.99 -> [10, 8], < 8 -> [6] (no 0!)
   assert.deepEqual(
     stats.needGroups.g1.map((s) => s.score),
     [17, 14]

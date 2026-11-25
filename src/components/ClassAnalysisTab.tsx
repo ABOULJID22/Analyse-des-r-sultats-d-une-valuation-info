@@ -134,6 +134,7 @@ export function ClassAnalysisTab({
                 <th className="py-2.5 px-3.5">Classe</th>
                 <th className="py-2.5 px-3 text-right">Effectif</th>
                 <th className="py-2.5 px-3 text-right">Notés</th>
+                <th className="py-2.5 px-3 text-right">Abs. (0)</th>
                 <th className="py-2.5 px-3 text-right">Moyenne</th>
                 <th className="py-2.5 px-3 text-right">Médiane</th>
                 <th className="py-2.5 px-3 text-right">Min</th>
@@ -167,6 +168,9 @@ export function ClassAnalysisTab({
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-900">
                     {c.notesCount}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono tabular-nums text-red-700">
+                    {c.absentCount}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-slate-900">
                     {fmt(c.mean)}
@@ -213,6 +217,9 @@ export function ClassAnalysisTab({
                 </td>
                 <td className="py-2.5 px-3 text-right font-mono tabular-nums">
                   {globalStats.notesCount}
+                </td>
+                <td className="py-2.5 px-3 text-right font-mono tabular-nums text-red-700">
+                  {globalStats.absentCount}
                 </td>
                 <td className="py-2.5 px-3 text-right font-mono tabular-nums">
                   {fmt(globalStats.mean)}

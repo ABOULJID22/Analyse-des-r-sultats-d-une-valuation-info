@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { DocimoStats, ItemAnalysisResult } from '../types/docimology';
+import {
+  DocimoStats,
+  ItemAnalysisResult,
+  OrganizationMode,
+} from '../types/docimology';
 import { generateDiagnostics } from '../utils/docimologyStats';
 import { NeedGroupsDonut } from './ChartsSuite';
 
@@ -9,6 +13,7 @@ interface DiagnosticsTabProps {
   groupStats: DocimoStats[];
   globalStats: DocimoStats;
   itemResults: ItemAnalysisResult[];
+  organizationMode: OrganizationMode | null;
 }
 
 export function DiagnosticsTab({
@@ -16,7 +21,9 @@ export function DiagnosticsTab({
   groupStats,
   globalStats,
   itemResults,
+  organizationMode,
 }: DiagnosticsTabProps) {
+  const withGroups = organizationMode === 'with-groups';
   const [selectedScopeId, setSelectedScopeId] = useState<string>('GLOBAL');
   const [studentQuery, setStudentQuery] = useState<string>('');
 
@@ -24,13 +31,18 @@ export function DiagnosticsTab({
     selectedScopeId === 'GLOBAL'
       ? globalStats
       : classStats.find((c) => c.className === selectedScopeId) ??
-        groupStats.find((g) => g.id === selectedScopeId) ??
+        (withGroups ? groupStats.find((g) => g.id === selectedScopeId) : undefined) ??
         globalStats;
 
-  const activeDiagnostics = generateDiagnostics(targetStats, itemResults);
+  const activeDiagnostics = generateDiagnostics(
+    targetStats,
+    targetStats.id === 'GLOBAL' ? itemResults : []
+  );
 
   const queryNorm = studentQuery.trim().toLowerCase();
-  const filterList = <T extends { fullName: string; massarCode: string; groupId: string }>(
+  const filterList = <
+    T extends { fullName: string; massarCode: string; groupId: string; className: string }
+  >(
     list: T[]
   ) =>
     queryNorm
@@ -38,13 +50,15 @@ export function DiagnosticsTab({
           (s) =>
             s.fullName.toLowerCase().includes(queryNorm) ||
             s.massarCode.toLowerCase().includes(queryNorm) ||
-            s.groupId.toLowerCase().includes(queryNorm)
+            s.groupId.toLowerCase().includes(queryNorm) ||
+            s.className.toLowerCase().includes(queryNorm)
         )
       : list;
 
   const g1List = filterList(targetStats.needGroups.g1);
   const g2List = filterList(targetStats.needGroups.g2);
   const g3List = filterList(targetStats.needGroups.g3);
+  const absentList = filterList(targetStats.absentStudents);
 
   if (classStats.length === 0) {
     return (
@@ -79,25 +93,27 @@ export function DiagnosticsTab({
           </label>
           <select
             id="diag-scope-select"
-            value={selectedScopeId}
+            value={targetStats.id}
             onChange={(e) => setSelectedScopeId(e.target.value)}
             className="px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-lg font-mono text-slate-900"
           >
             <option value="GLOBAL">Niveau Global (Toutes classes)</option>
-            <optgroup label="Classes (12)">
+            <optgroup label={`Classes (${classStats.length})`}>
               {classStats.map((c) => (
                 <option key={c.className} value={c.className}>
                   {c.className} (Moy. {c.mean?.toFixed(2) ?? '—'})
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Groupes (24)">
-              {groupStats.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.label} (Moy. {g.mean?.toFixed(2) ?? '—'})
-                </option>
-              ))}
-            </optgroup>
+            {withGroups && groupStats.length > 0 && (
+              <optgroup label={`Groupes (${groupStats.length})`}>
+                {groupStats.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.label} (Moy. {g.mean?.toFixed(2) ?? '—'})
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </div>
 
@@ -155,14 +171,14 @@ export function DiagnosticsTab({
         </div>
       </div>
 
-      {/* Synthetic Diagnostic Matrix Across All 12 Classes */}
+      {/* Synthetic Diagnostic Matrix Across All Classes */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200">
           <h3 className="text-base font-bold text-slate-900">
             Synthèse des diagnostics automatiques sur les {classStats.length} classes
           </h3>
           <p className="text-xs text-slate-500">
-            Cliquez sur une classe pour afficher ses listes nominatives de groupes de besoins.
+            Cliquez sur une classe pour afficher ses listes nominatives de groupes de besoins et ses absents.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -226,7 +242,7 @@ export function DiagnosticsTab({
             Répartition nominative en 3 Groupes de Besoins — {targetStats.label}
           </h2>
           <p className="text-xs text-slate-500">
-            Classement automatique selon la note obtenue sur 20 (hors absents).
+            Classement automatique selon la note obtenue sur 20 (hors absents et notes égales à 0).
           </p>
         </div>
 
@@ -260,7 +276,7 @@ export function DiagnosticsTab({
                         {st.fullName}
                       </div>
                       <div className="text-[11px] font-mono text-slate-500">
-                        {st.groupId} · {st.massarCode}
+                        {withGroups ? st.groupId : st.className} · {st.massarCode}
                       </div>
                     </div>
                     <span className="font-mono tabular-nums font-bold text-emerald-700 shrink-0">
@@ -301,7 +317,7 @@ export function DiagnosticsTab({
                         {st.fullName}
                       </div>
                       <div className="text-[11px] font-mono text-slate-500">
-                        {st.groupId} · {st.massarCode}
+                        {withGroups ? st.groupId : st.className} · {st.massarCode}
                       </div>
                     </div>
                     <span className="font-mono tabular-nums font-bold text-amber-700 shrink-0">
@@ -342,7 +358,7 @@ export function DiagnosticsTab({
                         {st.fullName}
                       </div>
                       <div className="text-[11px] font-mono text-slate-500">
-                        {st.groupId} · {st.massarCode}
+                        {withGroups ? st.groupId : st.className} · {st.massarCode}
                       </div>
                     </div>
                     <span className="font-mono tabular-nums font-bold text-red-700 shrink-0">
@@ -354,6 +370,52 @@ export function DiagnosticsTab({
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Liste des Absents (0 / Col. H / vide) */}
+      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">
+              Élèves absents ou non notés — {targetStats.label}
+            </h3>
+            <p className="text-xs text-slate-500">
+              Exclus des statistiques docimologiques (notes égales à 0, absences Col. H ou cellules vides).
+            </p>
+          </div>
+          <span className="font-mono tabular-nums text-xs font-bold text-slate-700">
+            {absentList.length} absent(s) ({targetStats.zeroCount} note 0)
+          </span>
+        </div>
+
+        {absentList.length === 0 ? (
+          <p className="p-4 text-xs text-slate-500">Aucun élève absent dans ce périmètre.</p>
+        ) : (
+          <div className="overflow-x-auto max-h-64 overflow-y-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="sticky top-0 bg-white border-b border-slate-200 text-slate-600 font-semibold">
+                <tr>
+                  <th className="py-2 px-4">{withGroups ? 'Groupe' : 'Classe'}</th>
+                  <th className="py-2 px-4">Code Massar</th>
+                  <th className="py-2 px-4">Nom & Prénom</th>
+                  <th className="py-2 px-4">Motif d’exclusion</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {absentList.map((ab, idx) => (
+                  <tr key={`${ab.className}-${ab.massarCode}-${idx}`} className="hover:bg-slate-50">
+                    <td className="py-2 px-4 font-mono font-semibold text-slate-800">
+                      {withGroups ? ab.groupId : ab.className}
+                    </td>
+                    <td className="py-2 px-4 font-mono text-slate-600">{ab.massarCode}</td>
+                    <td className="py-2 px-4 font-medium text-slate-900">{ab.fullName}</td>
+                    <td className="py-2 px-4 font-semibold text-red-700">{ab.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

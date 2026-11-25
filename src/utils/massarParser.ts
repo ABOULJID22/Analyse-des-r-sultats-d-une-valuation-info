@@ -212,7 +212,8 @@ export function exportStatsToExcel(
     'Classe / Groupe': item.label,
     Effectif: item.effectif,
     Notés: item.notesCount,
-    Absents: item.absentCount,
+    'Absents (0 / vide)': item.absentCount,
+    'Dont notes 0': item.zeroCount,
     Moyenne: item.mean ?? '-',
     Médiane: item.median ?? '-',
     Min: item.min ?? '-',
@@ -239,20 +240,23 @@ export function exportStatsToExcel(
   const classesSheet = XLSX.utils.json_to_sheet(
     rankedClasses.map((c) => formatRow(c, c.rank))
   );
-  XLSX.utils.book_append_sheet(wb, classesSheet, 'Classement 12 Classes');
+  XLSX.utils.book_append_sheet(wb, classesSheet, 'Classement Classes');
 
-  const groupsSheet = XLSX.utils.json_to_sheet(
-    rankedGroups.map((g) => formatRow(g, g.rank))
-  );
-  XLSX.utils.book_append_sheet(wb, groupsSheet, 'Classement 24 Groupes');
+  if (rankedGroups.length > 0) {
+    const groupsSheet = XLSX.utils.json_to_sheet(
+      rankedGroups.map((g) => formatRow(g, g.rank))
+    );
+    XLSX.utils.book_append_sheet(wb, groupsSheet, 'Classement Groupes');
+  }
 
-  // Need groups nominative sheet
+  // Need groups nominative sheet + absents
   const needRows: Record<string, string | number>[] = [];
+  const showGroups = rankedGroups.length > 0;
   for (const cls of classStats) {
     for (const s of cls.needGroups.g1) {
       needRows.push({
         Classe: s.className,
-        Groupe: s.groupId,
+        ...(showGroups ? { Groupe: s.groupId } : {}),
         'Code Massar': s.massarCode,
         'Nom & Prénom': s.fullName,
         Note: s.score,
@@ -262,7 +266,7 @@ export function exportStatsToExcel(
     for (const s of cls.needGroups.g2) {
       needRows.push({
         Classe: s.className,
-        Groupe: s.groupId,
+        ...(showGroups ? { Groupe: s.groupId } : {}),
         'Code Massar': s.massarCode,
         'Nom & Prénom': s.fullName,
         Note: s.score,
@@ -272,11 +276,21 @@ export function exportStatsToExcel(
     for (const s of cls.needGroups.g3) {
       needRows.push({
         Classe: s.className,
-        Groupe: s.groupId,
+        ...(showGroups ? { Groupe: s.groupId } : {}),
         'Code Massar': s.massarCode,
         'Nom & Prénom': s.fullName,
         Note: s.score,
         'Groupe de besoin': 'G3 - En difficulté (< 8)',
+      });
+    }
+    for (const a of cls.absentStudents) {
+      needRows.push({
+        Classe: a.className,
+        ...(showGroups ? { Groupe: a.groupId } : {}),
+        'Code Massar': a.massarCode,
+        'Nom & Prénom': a.fullName,
+        Note: a.reason === 'Note 0' ? 0 : 'Abs',
+        'Groupe de besoin': `Absent (${a.reason})`,
       });
     }
   }

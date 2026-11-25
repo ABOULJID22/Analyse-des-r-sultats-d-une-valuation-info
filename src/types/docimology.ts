@@ -1,11 +1,18 @@
 export type EvaluationColumn = 'G' | 'I' | 'K' | 'M';
 
 export const EVALUATION_COLUMN_LABELS: Record<EvaluationColumn, string> = {
-  G: 'DS1 (Colonne G)',
-  I: 'DS2 (Colonne I)',
-  K: 'DS3 (Colonne K)',
-  M: 'Activités intégrées (Colonne M)',
+  G: 'Contrôle 1',
+  I: 'Contrôle 2',
+  K: 'Contrôle 3',
+  M: 'Activités intégrées',
 };
+
+export type OrganizationMode = 'with-groups' | 'without-groups';
+
+export interface AnalysisConfig {
+  teacherName: string;
+  organizationMode: OrganizationMode | null;
+}
 
 export interface StudentRecord {
   rankInClass: number;
@@ -44,6 +51,17 @@ export interface ScoredStudent {
   score: number;
 }
 
+export interface AbsentStudent {
+  rankInClass: number;
+  groupNumber: 1 | 2;
+  groupId: string;
+  className: string;
+  massarId: string;
+  massarCode: string;
+  fullName: string;
+  reason: 'Note 0' | 'Absent (Col. H)' | 'Note manquante';
+}
+
 export interface HistogramBucket {
   bucket: string;
   count: number;
@@ -73,6 +91,8 @@ export interface DocimoStats {
   effectif: number;
   notesCount: number;
   absentCount: number;
+  zeroCount: number;
+  absentStudents: AbsentStudent[];
   mean: number | null;
   min: number | null;
   max: number | null;
@@ -129,5 +149,7 @@ export type ActiveTab =
   | 'import'
   | 'groups'
   | 'classes'
-  | 'tournament'
+  | 'ranking'
   | 'diagnostics';
+
+export type PdfScopeType = 'group' | 'class' | 'global';

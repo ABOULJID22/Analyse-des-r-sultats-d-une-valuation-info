@@ -1,20 +1,31 @@
-import { DocimoStats } from '../types/docimology';
+import { DocimoStats, OrganizationMode } from '../types/docimology';
 
 interface KpiStripProps {
   stats: DocimoStats;
   classesCount: number;
   groupsCount: number;
+  organizationMode: OrganizationMode | null;
 }
 
 const fmt = (n: number | null, suffix = ''): string =>
   n === null ? '—' : `${n.toFixed(2).replace('.', ',')}${suffix}`;
 
-export function KpiStrip({ stats, classesCount, groupsCount }: KpiStripProps) {
+export function KpiStrip({
+  stats,
+  classesCount,
+  groupsCount,
+  organizationMode,
+}: KpiStripProps) {
+  const scopeDesc =
+    organizationMode === 'without-groups'
+      ? `${classesCount} classes · Sans groupes`
+      : `${classesCount} classes · ${groupsCount} groupes`;
+
   const items = [
     {
       label: 'Population analysée',
       value: `${stats.notesCount} / ${stats.effectif}`,
-      sub: `${classesCount} classes · ${groupsCount} groupes · ${stats.absentCount} abs.`,
+      sub: `${scopeDesc} · ${stats.absentCount} abs. (${stats.zeroCount} note 0)`,
     },
     {
       label: 'Moyenne générale',
@@ -23,7 +34,10 @@ export function KpiStrip({ stats, classesCount, groupsCount }: KpiStripProps) {
     },
     {
       label: 'Taux de réussite (≥10)',
-      value: stats.successRate === null ? '—' : `${stats.successRate.toFixed(1).replace('.', ',')}%`,
+      value:
+        stats.successRate === null
+          ? '—'
+          : `${stats.successRate.toFixed(1).replace('.', ',')}%`,
       sub: `${stats.successCount} élèves admis`,
     },
     {

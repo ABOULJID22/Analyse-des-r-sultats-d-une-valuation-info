@@ -1,4 +1,5 @@
 import {
+  AbsentStudent,
   DiagnosticRuleResult,
   DocimoStats,
   EvaluationColumn,
@@ -70,6 +71,23 @@ export function computeMedian(sortedAsc: number[]): number | null {
   return round2((sortedAsc[mid - 1] + sortedAsc[mid]) / 2);
 }
 
+export function isStudentAbsentForColumn(
+  student: StudentRecord,
+  column: EvaluationColumn
+): { isAbsent: boolean; reason?: AbsentStudent['reason'] } {
+  const val = student.scores[column];
+  if (student.absent) {
+    return { isAbsent: true, reason: 'Absent (Col. H)' };
+  }
+  if (val === 0) {
+    return { isAbsent: true, reason: 'Note 0' };
+  }
+  if (val === null || !Number.isFinite(val)) {
+    return { isAbsent: true, reason: 'Note manquante' };
+  }
+  return { isAbsent: false };
+}
+
 export function computeDocimoStats(
   id: string,
   label: string,
@@ -81,9 +99,25 @@ export function computeDocimoStats(
   const effectif = students.length;
 
   const scoredStudents: ScoredStudent[] = [];
+  const absentStudents: AbsentStudent[] = [];
+  let zeroCount = 0;
+
   for (const s of students) {
+    const { isAbsent, reason } = isStudentAbsentForColumn(s, column);
     const val = s.scores[column];
-    if (!s.absent && val !== null && Number.isFinite(val)) {
+    if (isAbsent || val === null || !Number.isFinite(val)) {
+      if (reason === 'Note 0') zeroCount += 1;
+      absentStudents.push({
+        rankInClass: s.rankInClass,
+        groupNumber: s.groupNumber,
+        groupId: s.groupId,
+        className: s.className,
+        massarId: s.massarId,
+        massarCode: s.massarCode,
+        fullName: s.fullName,
+        reason: reason ?? 'Note manquante',
+      });
+    } else {
       scoredStudents.push({
         rankInClass: s.rankInClass,
         groupNumber: s.groupNumber,
@@ -98,7 +132,7 @@ export function computeDocimoStats(
   }
 
   const notesCount = scoredStudents.length;
-  const absentCount = effectif - notesCount;
+  const absentCount = absentStudents.length;
 
   if (notesCount === 0) {
     return {
@@ -109,6 +143,8 @@ export function computeDocimoStats(
       effectif,
       notesCount: 0,
       absentCount,
+      zeroCount,
+      absentStudents,
       mean: null,
       min: null,
       max: null,
@@ -163,6 +199,8 @@ export function computeDocimoStats(
     effectif,
     notesCount,
     absentCount,
+    zeroCount,
+    absentStudents,
     mean,
     min,
     max,
@@ -181,7 +219,8 @@ export function computeDocimoStats(
 
 export function computeAllStats(
   classes: ImportedClass[],
-  column: EvaluationColumn
+  column: EvaluationColumn,
+  includeGroups = true
 ): {
   groupStats: DocimoStats[];
   classStats: DocimoStats[];
@@ -198,16 +237,18 @@ export function computeAllStats(
 
     classStats.push(computeDocimoStats(cname, cname, cname, cls.students, column));
 
-    const g1Students = cls.students.filter((s) => s.groupNumber === 1);
-    const g2Students = cls.students.filter((s) => s.groupNumber === 2);
+    if (includeGroups) {
+      const g1Students = cls.students.filter((s) => s.groupNumber === 1);
+      const g2Students = cls.students.filter((s) => s.groupNumber === 2);
 
-    if (g1Students.length > 0) {
-      const g1Id = buildGroupId(cname, 1);
-      groupStats.push(computeDocimoStats(g1Id, g1Id, cname, g1Students, column, 1));
-    }
-    if (g2Students.length > 0) {
-      const g2Id = buildGroupId(cname, 2);
-      groupStats.push(computeDocimoStats(g2Id, g2Id, cname, g2Students, column, 2));
+      if (g1Students.length > 0) {
+        const g1Id = buildGroupId(cname, 1);
+        groupStats.push(computeDocimoStats(g1Id, g1Id, cname, g1Students, column, 1));
+      }
+      if (g2Students.length > 0) {
+        const g2Id = buildGroupId(cname, 2);
+        groupStats.push(computeDocimoStats(g2Id, g2Id, cname, g2Students, column, 2));
+      }
     }
   }
 

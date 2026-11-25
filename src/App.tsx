@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown, Printer } from 'lucide-react';
+import { FileDown, FileText } from 'lucide-react';
 import {
   ActiveTab,
+  AnalysisConfig,
   EvaluationColumn,
   EVALUATION_COLUMN_LABELS,
   ImportedClass,
@@ -17,37 +18,83 @@ import { KpiStrip } from './components/KpiStrip';
 import { ImportTab } from './components/ImportTab';
 import { GroupAnalysisTab } from './components/GroupAnalysisTab';
 import { ClassAnalysisTab } from './components/ClassAnalysisTab';
-import { TournamentTab } from './components/TournamentTab';
+import { RankingTab } from './components/RankingTab';
 import { DiagnosticsTab } from './components/DiagnosticsTab';
 import { PrintReportView } from './components/PrintReportView';
-
-const TABS: { id: ActiveTab; label: string }[] = [
-  { id: 'import', label: '1. Import & Données' },
-  { id: 'groups', label: '2. Analyse par Groupe (24)' },
-  { id: 'classes', label: '3. Analyse par Classe (12)' },
-  { id: 'tournament', label: '4. Tournoi & Super Stars' },
-  { id: 'diagnostics', label: '5. Diagnostic & Groupes de besoins' },
-];
+import { PdfExportModal } from './components/PdfExportModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('import');
+  const [config, setConfig] = useState<AnalysisConfig>({
+    teacherName: '',
+    organizationMode: null,
+  });
   const [classes, setClasses] = useState<ImportedClass[]>([]);
   const [selectedColumn, setSelectedColumn] = useState<EvaluationColumn>('G');
   const [items, setItems] = useState<ItemScoreInput[]>(DEMO_ITEMS_INFORMATIQUE);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('autostart') === '1') {
+      const modeParam = params.get('mode') === 'without-groups' ? 'without-groups' : 'with-groups';
+      setConfig((prev) => ({
+        ...prev,
+        teacherName: prev.teacherName || 'Pr. Mohamed ABOULJID',
+        organizationMode: modeParam,
+      }));
       setClasses(generateDemoClasses());
     }
   }, []);
 
+  const includeGroups = config.organizationMode !== 'without-groups';
+
+  // Ensure user cannot remain on hidden "groups" tab if switching to without-groups
+  useEffect(() => {
+    if (config.organizationMode === 'without-groups' && activeTab === 'groups') {
+      setActiveTab(classes.length > 0 ? 'classes' : 'import');
+    }
+  }, [config.organizationMode, activeTab, classes.length]);
+
   const { groupStats, classStats, globalStats, globalTop3 } = useMemo(
-    () => computeAllStats(classes, selectedColumn),
-    [classes, selectedColumn]
+    () => computeAllStats(classes, selectedColumn, includeGroups),
+    [classes, selectedColumn, includeGroups]
   );
 
   const itemResults = useMemo(() => computeItemAnalysis(items), [items]);
+
+  const visibleTabs: { id: ActiveTab; label: string }[] = useMemo(() => {
+    const base: { id: ActiveTab; label: string }[] = [
+      { id: 'import', label: '1. Import & Configuration' },
+    ];
+    if (config.organizationMode !== 'without-groups') {
+      base.push({ id: 'groups', label: '2. Analyse par Groupe (24)' });
+    }
+    base.push(
+      {
+        id: 'classes',
+        label:
+          config.organizationMode === 'without-groups'
+            ? '2. Analyse par Classe (12)'
+            : '3. Analyse par Classe (12)',
+      },
+      {
+        id: 'ranking',
+        label:
+          config.organizationMode === 'without-groups'
+            ? '3. Classement & Super Stars'
+            : '4. Classement & Super Stars',
+      },
+      {
+        id: 'diagnostics',
+        label:
+          config.organizationMode === 'without-groups'
+            ? '4. Diagnostic & Besoins'
+            : '5. Diagnostic & Besoins',
+      }
+    );
+    return base;
+  }, [config.organizationMode]);
 
   function handleAddClasses(incoming: ImportedClass[]) {
     setClasses((prev) => {
@@ -79,17 +126,13 @@ export default function App() {
     exportStatsToExcel(classStats, groupStats, globalStats, selectedColumn);
   }
 
-  function handlePrintPdf() {
-    window.print();
-  }
-
   const firstMeta = classes[0]?.metadata;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       {/* Strict 3-Zone Top Bar Contract */}
       <header className="no-print sticky top-0 z-30 bg-white border-b border-slate-200">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Zone 1: Wordmark */}
           <a
             href="#top"
@@ -102,13 +145,13 @@ export default function App() {
             DocimoStats Pro
           </a>
 
-          {/* Zone 2: 5 concise single-line nav tabs */}
+          {/* Zone 2: Concise single-line nav tabs */}
           <nav
             aria-label="Navigation principale"
             role="tablist"
-            className="hidden xl:flex items-center gap-6 overflow-x-auto"
+            className="hidden xl:flex items-center gap-4 2xl:gap-6"
           >
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = activeTab === tab.id;
               return (
                 <button
@@ -117,7 +160,7 @@ export default function App() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`py-5 text-[13px] 2xl:text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     active
                       ? 'border-blue-700 text-blue-700 font-semibold'
                       : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -133,11 +176,11 @@ export default function App() {
           <div className="flex items-center shrink-0">
             <button
               type="button"
-              onClick={handlePrintPdf}
+              onClick={() => setIsPdfModalOpen(true)}
               disabled={classes.length === 0}
               className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:bg-slate-300 disabled:cursor-not-allowed rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <FileText className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               <span>Exporter PDF</span>
             </button>
           </div>
@@ -146,7 +189,7 @@ export default function App() {
         {/* Mobile / Tablet tab strip (< xl) */}
         <div className="xl:hidden border-t border-slate-100 px-4 overflow-x-auto">
           <div className="flex items-center gap-5" role="tablist" aria-label="Onglets mobiles">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = activeTab === tab.id;
               return (
                 <button
@@ -178,11 +221,23 @@ export default function App() {
               Analyse Docimologique & Pédagogique — Informatique (2APIC)
             </h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span>Système Massar (NotesCC)</span>
+              {config.teacherName.trim() && (
+                <>
+                  <span className="font-semibold text-slate-800">{config.teacherName}</span>
+                  <span aria-hidden="true">·</span>
+                </>
+              )}
+              <span>
+                {config.organizationMode === 'with-groups'
+                  ? 'Mode : Avec Groupes (G1 / G2)'
+                  : config.organizationMode === 'without-groups'
+                  ? 'Mode : Sans Groupes (Classes entières)'
+                  : 'Mode non sélectionné'}
+              </span>
               <span aria-hidden="true">·</span>
               <span>
                 {classes.length > 0
-                  ? `${classes.length} classes · ${groupStats.length} groupes · ${firstMeta?.academy ?? ''} · ${firstMeta?.schoolYear ?? ''}`
+                  ? `${classes.length} classes${includeGroups ? ` · ${groupStats.length} groupes` : ''} · ${firstMeta?.academy ?? ''}`
                   : 'Aucune classe importée'}
               </span>
             </div>
@@ -225,12 +280,15 @@ export default function App() {
             stats={globalStats}
             classesCount={classStats.length}
             groupsCount={groupStats.length}
+            organizationMode={config.organizationMode}
           />
         )}
 
         {/* Active Tab View */}
         {activeTab === 'import' && (
           <ImportTab
+            config={config}
+            onUpdateConfig={setConfig}
             classes={classes}
             selectedColumn={selectedColumn}
             onChangeColumn={setSelectedColumn}
@@ -241,7 +299,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'groups' && (
+        {activeTab === 'groups' && includeGroups && (
           <GroupAnalysisTab groupStats={groupStats} classStats={classStats} />
         )}
 
@@ -255,11 +313,12 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'tournament' && (
-          <TournamentTab
+        {activeTab === 'ranking' && (
+          <RankingTab
             classStats={classStats}
             groupStats={groupStats}
             globalTop3={globalTop3}
+            organizationMode={config.organizationMode}
           />
         )}
 
@@ -269,12 +328,27 @@ export default function App() {
             groupStats={groupStats}
             globalStats={globalStats}
             itemResults={itemResults}
+            organizationMode={config.organizationMode}
           />
         )}
       </main>
 
-      {/* Official Print/PDF Report Layout */}
+      {/* PDF Export Scope Selector & High-Res Generator Modal */}
+      <PdfExportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        config={config}
+        classes={classes}
+        classStats={classStats}
+        groupStats={groupStats}
+        globalStats={globalStats}
+        selectedColumn={selectedColumn}
+        itemResults={itemResults}
+      />
+
+      {/* Official Print/PDF Report Fallback Layout */}
       <PrintReportView
+        config={config}
         classes={classes}
         classStats={classStats}
         groupStats={groupStats}

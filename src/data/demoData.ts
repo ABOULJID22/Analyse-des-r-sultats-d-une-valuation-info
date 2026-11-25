@@ -46,22 +46,23 @@ interface ClassProfile {
   spread: number;
   skewLowTail?: boolean;
   absentRanks?: number[];
+  zeroRanks?: number[];
 }
 
 // 12 realistic classes including 2APIC-2 flagship plus 11 varied pedagogical profiles
 const CLASS_PROFILES: ClassProfile[] = [
-  { className: '2APIC-1', count: 38, g1Center: 13.8, g2Center: 12.6, spread: 2.3, absentRanks: [14] },
-  { className: '2APIC-2', count: 39, g1Center: 14.2, g2Center: 13.1, spread: 2.2, absentRanks: [27] },
+  { className: '2APIC-1', count: 38, g1Center: 13.8, g2Center: 12.6, spread: 2.3, absentRanks: [14], zeroRanks: [33] },
+  { className: '2APIC-2', count: 39, g1Center: 14.2, g2Center: 13.1, spread: 2.2, absentRanks: [27], zeroRanks: [12] },
   { className: '2APIC-3', count: 36, g1Center: 11.4, g2Center: 10.6, spread: 2.7, absentRanks: [8, 31] },
-  { className: '2APIC-4', count: 40, g1Center: 8.6, g2Center: 8.2, spread: 1.9, absentRanks: [19] }, // Difficulté collective (<10, σ < 2.5)
+  { className: '2APIC-4', count: 40, g1Center: 8.6, g2Center: 8.2, spread: 1.9, absentRanks: [19], zeroRanks: [6] }, // Difficulté collective (<10, σ < 2.5)
   { className: '2APIC-5', count: 37, g1Center: 12.5, g2Center: 11.8, spread: 2.4 },
-  { className: '2APIC-6', count: 38, g1Center: 9.7, g2Center: 8.9, spread: 4.3, absentRanks: [5] }, // Classe hétérogène (<10, σ >= 3.5)
+  { className: '2APIC-6', count: 38, g1Center: 9.7, g2Center: 8.9, spread: 4.3, absentRanks: [5], zeroRanks: [25] }, // Classe hétérogène (<10, σ >= 3.5)
   { className: '2APIC-7', count: 36, g1Center: 15.1, g2Center: 13.9, spread: 2.0 },
   { className: '2APIC-8', count: 39, g1Center: 10.8, g2Center: 9.8, spread: 3.1, skewLowTail: true, absentRanks: [22] }, // Sous-groupe en difficulté
   { className: '2APIC-9', count: 35, g1Center: 11.9, g2Center: 10.9, spread: 2.5 },
   { className: '2APIC-10', count: 38, g1Center: 9.1, g2Center: 7.9, spread: 2.1, absentRanks: [11, 34] }, // Difficulté collective
   { className: '2APIC-11', count: 37, g1Center: 13.2, g2Center: 12.2, spread: 2.6 },
-  { className: '2APIC-12', count: 36, g1Center: 10.2, g2Center: 9.4, spread: 3.9, skewLowTail: true }, // Hétérogène + sous-groupe
+  { className: '2APIC-12', count: 36, g1Center: 10.2, g2Center: 9.4, spread: 3.9, skewLowTail: true, zeroRanks: [15] }, // Hétérogène + sous-groupe
 ];
 
 // Authentic student roster excerpt inspired by real 2APIC-2 Massar lists, extended deterministically
@@ -86,6 +87,7 @@ export function generateDemoClasses(): ImportedClass[] {
     for (let r = 1; r <= profile.count; r++) {
       const groupNumber = assignGroupNumber(r);
       const isAbsent = profile.absentRanks?.includes(r) ?? false;
+      const isZero = profile.zeroRanks?.includes(r) ?? false;
 
       let fullName: string;
       if (profile.className === '2APIC-2' && r <= CLASS_2APIC2_NAMES.length) {
@@ -116,8 +118,8 @@ export function generateDemoClasses(): ImportedClass[] {
       if (profile.className === '2APIC-2' && r === 2) ds1 = 19.25;
       if (profile.className === '2APIC-1' && r === 5) ds1 = 19.0;
 
-      const ds1Score = isAbsent ? null : clampGrade(ds1);
-      const ds2Score = isAbsent ? null : clampGrade((ds1Score ?? baseCenter) + (rand() - 0.45) * 2.0);
+      const ds1Score = isAbsent ? null : isZero ? 0 : clampGrade(ds1);
+      const ds2Score = isAbsent ? null : isZero ? 0 : clampGrade((ds1Score ?? baseCenter) + (rand() - 0.45) * 2.0);
       const ds3Score = isAbsent ? null : clampGrade((ds1Score ?? baseCenter) + (rand() - 0.4) * 2.4);
       const actScore = isAbsent ? null : clampGrade((ds1Score ?? baseCenter) + 1.1 + (rand() - 0.5) * 1.6);
 
