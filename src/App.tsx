@@ -233,7 +233,7 @@ export default function App() {
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Analyse Docimologique & Pédagogique — Informatique (2APIC)
+              Analyse Docimologique & Pédagogique 
             </h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
               {config.teacherName.trim() && (
