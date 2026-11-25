@@ -1,0 +1,6 @@
+{
+  "name": "DocimoStats Pro",
+  "description": "Plateforme d'analyse statistique, docimologique et pédagogique des évaluations sommatives en informatique (2APIC - Massar).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
