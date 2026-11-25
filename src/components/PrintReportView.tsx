@@ -37,18 +37,50 @@ export function PrintReportView({
 
   return (
     <div className="hidden print:block text-slate-900 space-y-6">
-      <div className="border-b-2 border-slate-900 pb-3 flex justify-between items-end">
-        <div>
-          <h1 className="text-xl font-bold">
-            Rapport Docimologique & Pédagogique — Informatique (2APIC)
-          </h1>
-          <p className="text-xs text-slate-600 mt-1">
-            {firstMeta.academy} · {firstMeta.province} · Année scolaire {firstMeta.schoolYear}
-          </p>
+      <div className="border-b-2 border-slate-900 pb-3 space-y-3">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-xl font-bold">
+              Rapport Docimologique & Pédagogique — {firstMeta.subject || 'Informatique'}
+            </h1>
+          </div>
+          <div className="text-right text-xs font-mono">
+            <div>Évaluation : {EVALUATION_COLUMN_LABELS[column]}</div>
+          </div>
         </div>
-        <div className="text-right text-xs font-mono">
-          <div>Professeur : {config.teacherName || 'Non renseigné'}</div>
-          <div>Évaluation : {EVALUATION_COLUMN_LABELS[column]}</div>
+        <div className="grid grid-cols-4 gap-3 border border-slate-300 rounded p-2.5 bg-slate-50 text-xs text-left">
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Académie</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.academy || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Direction Provinciale</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.province || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Établissement</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.school || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Professeur</div>
+            <div className="font-bold"><bdi dir="auto">{config.teacherName.trim() || firstMeta.teacherName || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Matière</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.subject || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Niveau</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.level || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Semestre</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.semester || '—'}</bdi></div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-slate-500 font-semibold">Année scolaire</div>
+            <div className="font-bold"><bdi dir="auto">{firstMeta.schoolYear || '—'}</bdi></div>
+          </div>
         </div>
       </div>
 

@@ -335,8 +335,8 @@ export function PdfExportModal({
                 }`}
               >
                 <div className="text-xs font-bold text-slate-900">Un Groupe spécifique</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  Ex : {groupStats[0]?.label ?? '2APIC-1 - G1'}
+                <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                  {groupStats[0]?.label ?? '2APIC-1 - G1'}
                 </div>
               </button>
             )}
@@ -352,8 +352,8 @@ export function PdfExportModal({
               }`}
             >
               <div className="text-xs font-bold text-slate-900">Une Classe spécifique</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Ex : {classStats[0]?.className ?? '2APIC-2'}
+              <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                {classStats[0]?.className ?? '2APIC-2'}
               </div>
             </button>
 
@@ -421,7 +421,16 @@ export function PdfExportModal({
             Aperçu du rapport : {targetStats.label} — {EVALUATION_COLUMN_LABELS[selectedColumn]}
           </div>
           <div className="text-slate-600">
-            Professeur : <strong className="text-slate-900">{config.teacherName || 'Non renseigné'}</strong>
+            Professeur :{' '}
+            <strong className="text-slate-900">
+              <bdi dir="auto">{config.teacherName.trim() || targetMeta?.teacherName || 'Non renseigné'}</bdi>
+            </strong>
+            {targetMeta?.school ? (
+              <>
+                {' · '}
+                <bdi dir="auto">{targetMeta.school}</bdi>
+              </>
+            ) : null}
           </div>
           <div className="text-slate-600 font-mono tabular-nums">
             Effectif : {targetStats.effectif} · Notés : {targetStats.notesCount} · Absents (0/vide) : {targetStats.absentCount} · Moyenne : {fmt(targetStats.mean)}/20 · Réussite : {fmt(targetStats.successRate, 1)}%
@@ -487,32 +496,66 @@ export function PdfExportModal({
           <div
             style={{
               borderBottom: '2px solid #0F172A',
-              paddingBottom: '12px',
-              marginBottom: '14px',
+              paddingBottom: '10px',
+              marginBottom: '12px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-end',
             }}
           >
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#1D4ED8', letterSpacing: '0.03em' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#1D4ED8', letterSpacing: '0.03em' }}>
                 DOCIMOSTATS PRO · RAPPORT PÉDAGOGIQUE OFFICIEL
               </div>
-              <h1 style={{ fontSize: '18px', fontWeight: 800, margin: '4px 0 0 0', color: '#0F172A' }}>
+              <h1 style={{ fontSize: '18px', fontWeight: 800, margin: '3px 0 0 0', color: '#0F172A' }}>
                 Analyse Docimologique — {targetStats.label}
               </h1>
-              <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
-                {targetMeta?.academy ?? 'AREF'} · {targetMeta?.province ?? 'Direction Provinciale'} · Niveau {targetMeta?.level ?? '2APIC'} · {targetMeta?.schoolYear ?? ''}
-              </div>
             </div>
             <div style={{ textAlign: 'right', fontSize: '11px', color: '#334155', lineHeight: 1.5 }}>
               <div>
-                Professeur : <strong>{config.teacherName || 'Non renseigné'}</strong>
-              </div>
-              <div>
                 Évaluation : <strong>{EVALUATION_COLUMN_LABELS[selectedColumn]}</strong>
               </div>
+              <div>
+                Professeur :{' '}
+                <strong>
+                  <bdi dir="auto">{config.teacherName.trim() || targetMeta?.teacherName || 'Non renseigné'}</bdi>
+                </strong>
+              </div>
             </div>
+          </div>
+
+          {/* Official Administrative Identity Cartouche */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '8px 12px',
+              border: '1px solid #CBD5E1',
+              borderRadius: '6px',
+              padding: '10px 12px',
+              backgroundColor: '#F8FAFC',
+              marginBottom: '12px',
+            }}
+          >
+            {[
+              { label: 'Académie', value: targetMeta?.academy || '—' },
+              { label: 'Direction Provinciale', value: targetMeta?.province || '—' },
+              { label: 'Établissement', value: targetMeta?.school || '—' },
+              { label: 'Professeur', value: config.teacherName.trim() || targetMeta?.teacherName || '—' },
+              { label: 'Matière', value: targetMeta?.subject || '—' },
+              { label: 'Niveau', value: targetMeta?.level || '—' },
+              { label: 'Semestre', value: targetMeta?.semester || '—' },
+              { label: 'Année scolaire', value: targetMeta?.schoolYear || '—' },
+            ].map((metaItem) => (
+              <div key={metaItem.label} style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '9px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                  {metaItem.label}
+                </div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', marginTop: '2px', textAlign: 'left' }}>
+                  <bdi dir="auto">{metaItem.value}</bdi>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Complete statistical indicators grid */}

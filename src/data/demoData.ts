@@ -146,10 +146,14 @@ export function generateDemoClasses(): ImportedClass[] {
     return {
       metadata: {
         className: profile.className,
-        level: '2APIC',
-        academy: 'AREF Casablanca-Settat',
-        province: 'Direction Provinciale Nouaceur',
-        schoolYear: '2025/2026',
+        level: 'الثانية إعدادي مسار دولي',
+        academy: 'فاس - مكناس',
+        province: 'إقليم: تاونات',
+        school: 'ثانوية بوهودة الإعدادية',
+        teacherName: 'محمد ابوالجد',
+        semester: 'الدورة الأولى',
+        subject: 'المعلوميات',
+        schoolYear: '2026/2027',
         sourceFile: `export_notesCC_${profile.className}.xlsx`,
       },
       students,

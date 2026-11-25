@@ -163,7 +163,7 @@ export function ImportTab({
             onChange={(e) =>
               onUpdateConfig({ ...config, teacherName: e.target.value })
             }
-            placeholder="Ex : Pr. Mohamed ABOULJID"
+            placeholder="Saisir le nom du professeur (pré-rempli depuis O9 à l’import)"
             className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
@@ -466,9 +466,11 @@ export function ImportTab({
                           {cls.metadata.className}
                         </button>
                       </td>
-                      <td className="py-2.5 px-4 text-slate-700">{cls.metadata.level}</td>
-                      <td className="py-2.5 px-4 text-slate-600 text-xs">
-                        {cls.metadata.academy} · {cls.metadata.province}
+                      <td className="py-2.5 px-4 text-slate-700" dir="auto">{cls.metadata.level}</td>
+                      <td className="py-2.5 px-4 text-slate-600 text-xs" dir="auto">
+                        {[cls.metadata.academy, cls.metadata.province, cls.metadata.school]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </td>
                       <td className="py-2.5 px-4 font-mono tabular-nums text-slate-700">
                         {cls.metadata.schoolYear}

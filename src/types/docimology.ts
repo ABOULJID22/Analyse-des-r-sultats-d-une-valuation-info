@@ -27,10 +27,14 @@ export interface StudentRecord {
 }
 
 export interface ClassMetadata {
-  className: string; // I9 (ex: 2APIC-2)
-  level: string; // D9 (ex: 2APIC)
+  className: string; // I9
+  level: string; // D9
   academy: string; // D7
   province: string; // I7
+  school: string; // O7
+  teacherName: string; // O9
+  semester: string; // D11
+  subject: string; // O11
   schoolYear: string; // D13
   sourceFile: string;
 }

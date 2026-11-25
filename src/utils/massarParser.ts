@@ -9,10 +9,14 @@ import {
 } from '../types/docimology';
 import { assignGroupNumber, buildGroupId, rankEntities } from './docimologyStats';
 
+const EXCLUDED_TITLE_REGEX = /نقط\s*المراقبة\s*المستمرة/g;
+
 function getCellValue(sheet: XLSX.WorkSheet, address: string): string {
+  // Never read F4 general title ("نقط المراقبة المستمرة")
+  if (address.toUpperCase() === 'F4') return '';
   const cell = sheet[address];
   if (!cell || cell.v === undefined || cell.v === null) return '';
-  return String(cell.v).trim();
+  return String(cell.v).replace(EXCLUDED_TITLE_REGEX, '').trim();
 }
 
 function parseNumericScore(raw: unknown): number | null {
@@ -49,6 +53,10 @@ export function parseMassarSheet(
   const level = getCellValue(sheet, 'D9') || '2APIC';
   const academy = getCellValue(sheet, 'D7') || 'Académie Régionale';
   const province = getCellValue(sheet, 'I7') || 'Direction Provinciale';
+  const school = getCellValue(sheet, 'O7') || '';
+  const teacherName = getCellValue(sheet, 'O9') || '';
+  const semester = getCellValue(sheet, 'D11') || '';
+  const subject = getCellValue(sheet, 'O11') || '';
   const schoolYear = getCellValue(sheet, 'D13') || '2025/2026';
 
   const metadata: ClassMetadata = {
@@ -56,6 +64,10 @@ export function parseMassarSheet(
     level,
     academy,
     province,
+    school,
+    teacherName,
+    semester,
+    subject,
     schoolYear,
     sourceFile,
   };
@@ -152,15 +164,21 @@ export function buildMassarWorkbookFromClasses(classes: ImportedClass[]): XLSX.W
 
   classes.forEach((cls, idx) => {
     const aoa: (string | number | null)[][] = Array.from({ length: 17 }, () =>
-      Array(14).fill(null)
+      Array(16).fill(null)
     );
 
     // Massar metadata coordinates (0-indexed)
-    // D7 -> r6,c3 | I7 -> r6,c8 | D9 -> r8,c3 | I9 -> r8,c8 | D13 -> r12,c3
+    // D7 -> r6,c3 | I7 -> r6,c8 | O7 -> r6,c14
+    // D9 -> r8,c3 | I9 -> r8,c8 | O9 -> r8,c14
+    // D11 -> r10,c3 | O11 -> r10,c14 | D13 -> r12,c3
     aoa[6][3] = cls.metadata.academy;
     aoa[6][8] = cls.metadata.province;
+    aoa[6][14] = cls.metadata.school;
     aoa[8][3] = cls.metadata.level;
     aoa[8][8] = cls.metadata.className;
+    aoa[8][14] = cls.metadata.teacherName;
+    aoa[10][3] = cls.metadata.semester;
+    aoa[10][14] = cls.metadata.subject;
     aoa[12][3] = cls.metadata.schoolYear;
 
     // Headers on row 17 (index 16)

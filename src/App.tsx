@@ -15,6 +15,7 @@ import {
 import { exportStatsToExcel } from './utils/massarParser';
 import { DEMO_ITEMS_INFORMATIQUE, generateDemoClasses } from './data/demoData';
 import { KpiStrip } from './components/KpiStrip';
+import { AdministrativeCartouche } from './components/AdministrativeCartouche';
 import { ImportTab } from './components/ImportTab';
 import { GroupAnalysisTab } from './components/GroupAnalysisTab';
 import { ClassAnalysisTab } from './components/ClassAnalysisTab';
@@ -97,6 +98,13 @@ export default function App() {
   }, [config.organizationMode]);
 
   function handleAddClasses(incoming: ImportedClass[]) {
+    const extractedTeacher = incoming.find((c) => c.metadata.teacherName.trim())?.metadata.teacherName.trim();
+    if (extractedTeacher) {
+      setConfig((prev) =>
+        prev.teacherName.trim() ? prev : { ...prev, teacherName: extractedTeacher }
+      );
+    }
+
     setClasses((prev) => {
       const map = new Map<string, ImportedClass>();
       for (const c of prev) {
@@ -110,7 +118,14 @@ export default function App() {
   }
 
   function handleLoadDemo() {
-    setClasses(generateDemoClasses());
+    const demo = generateDemoClasses();
+    const extractedTeacher = demo[0]?.metadata.teacherName?.trim();
+    if (extractedTeacher) {
+      setConfig((prev) =>
+        prev.teacherName.trim() ? prev : { ...prev, teacherName: extractedTeacher }
+      );
+    }
+    setClasses(demo);
   }
 
   function handleRemoveClass(className: string) {
@@ -274,7 +289,14 @@ export default function App() {
           </div>
         </div>
 
-        {/* Global KPI Strip when data is present */}
+        {/* Administrative Identity Cartouche & Global KPI Strip when data is present */}
+        {classes.length > 0 && firstMeta && (
+          <AdministrativeCartouche
+            metadata={firstMeta}
+            teacherNameOverride={config.teacherName}
+          />
+        )}
+
         {classes.length > 0 && (
           <KpiStrip
             stats={globalStats}

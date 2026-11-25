@@ -168,15 +168,28 @@ test('demo dataset has 12 classes and 24 groups and roundtrips through Massar Ex
   assert.equal(ranked[0].rank, 1);
   assert.equal(ranked[11].rank, 12);
 
-  // Roundtrip single-class Massar workbook (NotesCC)
+  // Roundtrip single-class Massar workbook (NotesCC) with F4 title present
   const wbSingle = buildMassarWorkbookFromClasses([demo[1]]); // 2APIC-2
+  const notesSheet = wbSingle.Sheets['NotesCC'];
+  notesSheet['F4'] = { t: 's', v: 'نقط المراقبة المستمرة' };
+
   const buffer = XLSX.write(wbSingle, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
   const parsed = parseMassarWorkbook(buffer, 'export_notesCC_2APIC-2.xlsx');
 
   assert.equal(parsed.length, 1);
   assert.equal(parsed[0].metadata.className, '2APIC-2');
-  assert.equal(parsed[0].metadata.level, '2APIC');
-  assert.equal(parsed[0].metadata.schoolYear, '2025/2026');
+  assert.equal(parsed[0].metadata.academy, 'فاس - مكناس');
+  assert.equal(parsed[0].metadata.province, 'إقليم: تاونات');
+  assert.equal(parsed[0].metadata.school, 'ثانوية بوهودة الإعدادية');
+  assert.equal(parsed[0].metadata.level, 'الثانية إعدادي مسار دولي');
+  assert.equal(parsed[0].metadata.teacherName, 'محمد ابوالجد');
+  assert.equal(parsed[0].metadata.semester, 'الدورة الأولى');
+  assert.equal(parsed[0].metadata.subject, 'المعلوميات');
+  assert.equal(parsed[0].metadata.schoolYear, '2026/2027');
+  assert.equal(
+    Object.values(parsed[0].metadata).some((v) => String(v).includes('نقط المراقبة المستمرة')),
+    false
+  );
   assert.equal(parsed[0].students.length, demo[1].students.length);
   assert.equal(parsed[0].students[0].groupNumber, 1);
   assert.equal(parsed[0].students[20].groupNumber, 2);
