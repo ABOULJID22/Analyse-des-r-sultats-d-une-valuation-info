@@ -6,6 +6,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: process.env.GITHUB_ACTIONS
+      ? '/Analyse-des-r-sultats-d-une-valuation-info/'
+      : '/',
     plugins: [
       react(),
       tailwindcss(),
